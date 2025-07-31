@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSAT Builder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="py-16">
+            <h1 class="text-center">Evallo DSAT Builder</h1>
+            
+        </header>
+        
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <div class="tab-container">
+                <button id="sectionsTab" class="tab-button active" data-tab="sections">Test Sections</button>
+                <button id="questionsTab" class="tab-button" data-tab="questions">Questions</button>
+            </div>
+        </div>
+
+        <!-- Sections Tab Content -->
+        <div id="sectionsContent" class="tab-content">
+            <div class="section-header">
+                <h2>Test Sections</h2>
+                <button id="addSectionBtn" class="btn btn--primary">Add Section</button>
+                <button id="exportBtn" class="btn btn--primary">Export</button>
+            </div>
+            <div id="sectionsList"></div>
+        </div>
+
+        <!-- Questions Tab Content -->
+        <div id="questionsContent" class="tab-content hidden">
+            <div class="section-header">
+                <h2>Questions</h2>
+                <button id="addQuestionBtn" class="btn btn--primary">Add Question</button>
+            </div>
+            <div id="questionsList"></div>
+        </div>
+    </div>
+
+    <!-- Add Section Modal -->
+    <div id="sectionModal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Section</h3>
+                <button class="modal-close" data-modal="sectionModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="sectionForm">
+                    <div class="form-group">
+                        <label class="form-label" for="sectionId">Section ID</label>
+                        <input type="text" id="sectionId" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="sectionName">Section Name</label>
+                        <input type="text" id="sectionName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="sectionTimer">Timer (minutes)</label>
+                        <input type="number" id="sectionTimer" class="form-control" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="sectionDescription">Description</label>
+                        <textarea id="sectionDescription" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="scoringScale">Scoring Scale</label>
+                        <input type="text" id="scoringScale" class="form-control" placeholder="e.g. Scale1,Scale2" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="numberOfQuestions">Number of Questions</label>
+                        <input type="number" id="numberOfQuestions" class="form-control" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Permissions</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="calculatorAllowed"> Calculator
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="annotationAllowed"> Annotation
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="reviewAllowed"> Review
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="crossOptionAllowed"> Cross Option
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" form="sectionForm" class="btn btn--primary">Add Section</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Question Modal -->
+    <div id="questionModal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content question-modal-content">
+            <div class="modal-header">
+                <h3>Add Question</h3>
+                <button class="modal-close" data-modal="questionModal">&times;</button>
+            </div>
+            <div class="modal-body question-modal-body">
+                <form id="questionForm">
+                    <div class="question-form-layout">
+                        <!-- Left Column -->
+                        <div class="question-form-left">
+                            <div class="form-group">
+                                <label class="form-label" for="questionType">Question Type</label>
+                                <select id="questionType" class="form-control" required>
+                                    <option value="">Select Type</option>
+                                    <option value="MCQ">MCQ</option>
+                                    <option value="Grid-in">Grid-in</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="questionSection">Section</label>
+                                <select id="questionSection" class="form-control" required>
+                                    <option value="">Select section...</option>
+                                </select>
+                            </div>
+                            
+                            <!-- LaTeX Library -->
+                            <div class="form-group">
+                                <label class="form-label">LaTeX Library</label>
+                                <div class="latex-library">
+                                    <div class="latex-category">
+                                        <button type="button" class="latex-category-header" data-category="math">
+                                            <span>Math Commands</span>
+                                            <span class="latex-toggle">▼</span>
+                                        </button>
+                                        <div class="latex-category-content" id="math-commands">
+                                            <div class="latex-commands-grid"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="latex-category">
+                                        <button type="button" class="latex-category-header" data-category="others">
+                                            <span>Others</span>
+                                            <span class="latex-toggle">▼</span>
+                                        </button>
+                                        <div class="latex-category-content" id="others-commands">
+                                            <div class="latex-commands-grid"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="latex-category">
+                                        <button type="button" class="latex-category-header" data-category="format">
+                                            <span>Format Commands</span>
+                                            <span class="latex-toggle">▼</span>
+                                        </button>
+                                        <div class="latex-category-content" id="format-commands">
+                                            <div class="latex-commands-grid"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="latex-category">
+                                        <button type="button" class="latex-category-header" data-category="functions">
+                                            <span>Functions</span>
+                                            <span class="latex-toggle">▼</span>
+                                        </button>
+                                        <div class="latex-category-content" id="functions-commands">
+                                            <div class="latex-commands-grid"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="latex-category">
+                                        <button type="button" class="latex-category-header" data-category="relations">
+                                            <span>Relations and Logic</span>
+                                            <span class="latex-toggle">▼</span>
+                                        </button>
+                                        <div class="latex-category-content" id="relations-commands">
+                                            <div class="latex-commands-grid"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="latex-category">
+                                        <button type="button" class="latex-category-header" data-category="arrows">
+                                            <span>Arrows</span>
+                                            <span class="latex-toggle">▼</span>
+                                        </button>
+                                        <div class="latex-category-content" id="arrows-commands">
+                                            <div class="latex-commands-grid"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="latex-category">
+                                        <button type="button" class="latex-category-header" data-category="operators">
+                                            <span>Operators</span>
+                                            <span class="latex-toggle">▼</span>
+                                        </button>
+                                        <div class="latex-category-content" id="operators-commands">
+                                            <div class="latex-commands-grid"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="latex-category">
+                                        <button type="button" class="latex-category-header" data-category="greek-upper">
+                                            <span>Greek Uppercase</span>
+                                            <span class="latex-toggle">▼</span>
+                                        </button>
+                                        <div class="latex-category-content" id="greek-upper-commands">
+                                            <div class="latex-commands-grid"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="latex-category">
+                                        <button type="button" class="latex-category-header" data-category="greek-lower">
+                                            <span>Greek Lowercase</span>
+                                            <span class="latex-toggle">▼</span>
+                                        </button>
+                                        <div class="latex-category-content" id="greek-lower-commands">
+                                            <div class="latex-commands-grid"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="questionText">Question Text</label>
+                                <textarea id="questionText" class="form-control" rows="4" placeholder="Enter your question text here..."></textarea>
+                            </div>
+                            
+                            <!-- MCQ Options -->
+                            <div id="mcqOptions" class="form-group hidden">
+                                <label class="form-label">Answer Options</label>
+                                <div class="options-grid">
+                                    <div>
+                                        <label class="form-label">Option A:</label>
+                                        <input type="text" id="optionA" class="form-control">
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Option B:</label>
+                                        <input type="text" id="optionB" class="form-control">
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Option C:</label>
+                                        <input type="text" id="optionC" class="form-control">
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Option D:</label>
+                                        <input type="text" id="optionD" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="mt-8">
+                                    <label class="form-label" for="correctMCQ">Correct Answer</label>
+                                    <select id="correctMCQ" class="form-control">
+                                        <option value="">Select correct answer...</option>
+                                        <option value="A">A</option>
+                                        <option value="B">B</option>
+                                        <option value="C">C</option>
+                                        <option value="D">D</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Grid-in Answer -->
+                            <div id="gridinAnswer" class="form-group hidden">
+                                <label class="form-label" for="correctGridin">Correct Answer</label>
+                                <input type="text" id="correctGridin" class="form-control" placeholder="Enter the correct answer">
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column -->
+                        <div class="question-form-right">
+                            <div class="form-group">
+                                <label class="form-label" for="concepts">Concepts</label>
+                                <textarea id="concepts" class="form-control" rows="4" placeholder="Enter related concepts..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="learningStrategies">Learning Strategies</label>
+                                <textarea id="learningStrategies" class="form-control" rows="4" placeholder="Enter learning strategies..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Additional Options</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="includeReadingPassage"> Include Reading Passage
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="includeQuestionImage"> Include Question Image
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="includeAnswerImages"> Include Answer Images
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" form="questionForm" class="btn btn--primary">Add Question</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
