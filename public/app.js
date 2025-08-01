@@ -293,6 +293,7 @@ function setupLatexInputs() {
         'optionB',
         'optionC',
         'optionD',
+        'optionE',
         'correctGridin'
     ];
 
@@ -508,6 +509,7 @@ function handleQuestionTypeChange() {
             document.getElementById('optionB').disabled = false;
             document.getElementById('optionC').disabled = false;
             document.getElementById('optionD').disabled = false;
+            document.getElementById('optionE').disabled = false;
             document.getElementById('correctMCQ').disabled = false;
         }
         if (gridinAnswer) gridinAnswer.classList.add('hidden');
@@ -705,7 +707,8 @@ function handleQuestionSubmit(e) {
                 A: document.getElementById('optionA').value.trim(),
                 B: document.getElementById('optionB').value.trim(),
                 C: document.getElementById('optionC').value.trim(),
-                D: document.getElementById('optionD').value.trim()
+                D: document.getElementById('optionD').value.trim(),
+                E: document.getElementById('optionE').value.trim()
             };
             baseData.correctAnswer = document.getElementById('correctMCQ').value;
             
@@ -955,6 +958,7 @@ window.editQuestion = function(questionId) {
         document.getElementById('optionB').value = question.options.B;
         document.getElementById('optionC').value = question.options.C;
         document.getElementById('optionD').value = question.options.D;
+        document.getElementById('optionE').value = question.options.E;
         document.getElementById('correctMCQ').value = question.correctAnswer;
     } else if (question.type === 'Grid-in') {
         document.getElementById('correctGridin').value = question.correctAnswer;
@@ -1053,7 +1057,8 @@ function handleQuestionSubmit(e) {
                 A: document.getElementById('optionA').value.trim(),
                 B: document.getElementById('optionB').value.trim(),
                 C: document.getElementById('optionC').value.trim(),
-                D: document.getElementById('optionD').value.trim()
+                D: document.getElementById('optionD').value.trim(),
+                E: document.getElementById('optionE').value.trim()
             };
             baseData.correctAnswer = document.getElementById('correctMCQ').value;
             

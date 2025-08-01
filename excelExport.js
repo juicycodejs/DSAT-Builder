@@ -81,6 +81,7 @@ function createWorkbook(data) {
       'Option_B',
       'Option_C',
       'Option_D',
+      'Option_E',
     ];
     // Section info row is not needed as a single row, so skip it
 
@@ -98,7 +99,8 @@ function createWorkbook(data) {
       q.options ? (q.options.A || (Array.isArray(q.options) ? q.options[0] : '')) : '',
       q.options ? (q.options.B || (Array.isArray(q.options) ? q.options[1] : '')) : '',
       q.options ? (q.options.C || (Array.isArray(q.options) ? q.options[2] : '')) : '',
-      q.options ? (q.options.D || (Array.isArray(q.options) ? q.options[3] : '')) : ''
+      q.options ? (q.options.D || (Array.isArray(q.options) ? q.options[3] : '')) : '',
+      q.options ? (q.options.E || (Array.isArray(q.options) ? q.options[4] : '')) : ''
     ]);
 
     const sheetData = [sectionInfoHeader, ...questionRows];
