@@ -89,27 +89,30 @@ function createWorkbook(data) {
     ];
     // Section info row is not needed as a single row, so skip it
 
+    // Get questions for this section from the questions array
+    const sectionQuestions = data.questions ? data.questions.filter(q => q.sectionId === section.id) : [];
+    
     // Build question rows with consecutive numbering
-    const questionRows = (section.questions || []).map((q, idx) => [
+    const questionRows = sectionQuestions.map((q, idx) => [
       idx + 1,
-      q.correct || q.correctAnswer || '',
+      q.correctAnswer || '',
       q.concepts || '',
       q.learningStrategies || '',
       q.type || '',
       q.additionalOptions && q.additionalOptions.includeReadingPassage ? 'Yes' : 'No',
       q.additionalOptions && q.additionalOptions.includeQuestionImage ? 'Yes' : 'No',
       q.additionalOptions && q.additionalOptions.includeAnswerImages ? 'Yes' : 'No',
-      q.text || q.questionText || '',
-      q.options ? (q.options.A || (Array.isArray(q.options) ? q.options[0] : '')) : '',
-      q.options ? (q.options.B || (Array.isArray(q.options) ? q.options[1] : '')) : '',
-      q.options ? (q.options.C || (Array.isArray(q.options) ? q.options[2] : '')) : '',
-      q.options ? (q.options.D || (Array.isArray(q.options) ? q.options[3] : '')) : '',
-      q.options ? (q.options.E || (Array.isArray(q.options) ? q.options[4] : '')) : '',
-      q.options ? (q.options.F || (Array.isArray(q.options) ? q.options[5] : '')) : '',
-      q.options ? (q.options.G || (Array.isArray(q.options) ? q.options[6] : '')) : '',
-      q.options ? (q.options.H || (Array.isArray(q.options) ? q.options[7] : '')) : '',
-      q.options ? (q.options.I || (Array.isArray(q.options) ? q.options[8] : '')) : '',
-      q.options ? (q.options.J || (Array.isArray(q.options) ? q.options[9] : '')) : '',
+      q.questionText || '',
+      q.options ? (q.options.A || '') : '',
+      q.options ? (q.options.B || '') : '',
+      q.options ? (q.options.C || '') : '',
+      q.options ? (q.options.D || '') : '',
+      q.options ? (q.options.E || '') : '',
+      q.options ? (q.options.F || '') : '',
+      q.options ? (q.options.G || '') : '',
+      q.options ? (q.options.H || '') : '',
+      q.options ? (q.options.I || '') : '',
+      q.options ? (q.options.J || '') : '',
 
     ]);
 

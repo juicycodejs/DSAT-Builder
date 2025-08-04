@@ -19,15 +19,27 @@ app.get('/', (req, res) => {
 app.use(express.json({limit: '2mb'}));
 
 app.post('/export', (req, res) => {
-  const data = req.body;
-  if (!data || !data.sections) {
-    return res.status(400).send('Invalid data');
+  try {
+    const data = req.body;
+    if (!data || !data.sections) {
+      return res.status(400).send('Invalid data: sections are required');
+    }
+    
+    console.log('Exporting data:', {
+      sectionsCount: data.sections ? data.sections.length : 0,
+      questionsCount: data.questions ? data.questions.length : 0,
+      scoringDataCount: data.scoringData ? data.scoringData.length : 0
+    });
+    
+    const wb = createWorkbook(data);
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Disposition', 'attachment; filename="TestBuilderExport.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buf);
+  } catch (error) {
+    console.error('Export error:', error);
+    res.status(500).send('Export failed: ' + error.message);
   }
-  const wb = createWorkbook(data);
-  const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-  res.setHeader('Content-Disposition', 'attachment; filename="TestBuilderExport.xlsx"');
-  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.send(buf);
 });
 
 app.listen(port, () => {

@@ -170,10 +170,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                sections: appData.sections.map(section => ({
-                    ...section,
-                    questions: appData.questions.filter(q => q.sectionId === section.id)
-                })),
+                sections: appData.sections,
+                questions: appData.questions,
                 scoringData: appData.scoringData // Add scoring data to the request
             })
         })
