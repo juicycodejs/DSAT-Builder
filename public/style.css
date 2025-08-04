@@ -1421,3 +1421,24 @@ header h1 {
     opacity: 1;
   }
 }
+
+.options-control {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.btn--secondary {
+    background-color: var(--color-slate-500);
+    color: var(--color-white);
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.btn--secondary:disabled {
+    background-color: var(--color-gray-300);
+    cursor: not-allowed;
+}

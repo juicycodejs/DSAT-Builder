@@ -294,6 +294,11 @@ function setupLatexInputs() {
         'optionC',
         'optionD',
         'optionE',
+        'optionF',
+        'optionG',
+        'optionH',
+        'optionI',
+        'optionJ',
         'correctGridin'
     ];
 
@@ -509,7 +514,6 @@ function handleQuestionTypeChange() {
             document.getElementById('optionB').disabled = false;
             document.getElementById('optionC').disabled = false;
             document.getElementById('optionD').disabled = false;
-            document.getElementById('optionE').disabled = false;
             document.getElementById('correctMCQ').disabled = false;
         }
         if (gridinAnswer) gridinAnswer.classList.add('hidden');
@@ -708,7 +712,6 @@ function handleQuestionSubmit(e) {
                 B: document.getElementById('optionB').value.trim(),
                 C: document.getElementById('optionC').value.trim(),
                 D: document.getElementById('optionD').value.trim(),
-                E: document.getElementById('optionE').value.trim()
             };
             baseData.correctAnswer = document.getElementById('correctMCQ').value;
             
@@ -958,7 +961,6 @@ window.editQuestion = function(questionId) {
         document.getElementById('optionB').value = question.options.B;
         document.getElementById('optionC').value = question.options.C;
         document.getElementById('optionD').value = question.options.D;
-        document.getElementById('optionE').value = question.options.E;
         document.getElementById('correctMCQ').value = question.correctAnswer;
     } else if (question.type === 'Grid-in') {
         document.getElementById('correctGridin').value = question.correctAnswer;
@@ -971,7 +973,6 @@ window.editQuestion = function(questionId) {
 
 function handleSectionSubmit(e) {
     e.preventDefault();
-    console.log('Section form submitted');
     
     try {
         const formData = {
@@ -997,7 +998,7 @@ function handleSectionSubmit(e) {
         const existingIndex = appData.sections.findIndex(s => s.id === formData.id);
         if (existingIndex >= 0) {
             appData.sections[existingIndex] = formData;
-            console.log('Section updated successfully');
+           
         } else {
             if (appData.sections.find(s => s.id === formData.id)) {
                 alert('Section ID already exists. Please use a different ID.');
@@ -1058,7 +1059,6 @@ function handleQuestionSubmit(e) {
                 B: document.getElementById('optionB').value.trim(),
                 C: document.getElementById('optionC').value.trim(),
                 D: document.getElementById('optionD').value.trim(),
-                E: document.getElementById('optionE').value.trim()
             };
             baseData.correctAnswer = document.getElementById('correctMCQ').value;
             
@@ -1123,3 +1123,82 @@ function populateSectionDropdown() {
     
     console.log('Section dropdown populated with', appData.sections.length, 'sections');
 }
+
+// Handle MCQ options addition and removal
+document.addEventListener('DOMContentLoaded', function() {
+    const addOptionBtn = document.getElementById('addOptionBtn');
+    const removeOptionBtn = document.getElementById('removeOptionBtn');
+    const optionsGrid = document.querySelector('.options-grid');
+    const correctMCQ = document.getElementById('correctMCQ');
+    
+    const letters = ['E', 'F', 'G', 'H', 'I', 'J'];
+    let currentOptionIndex = 0;
+    
+    if (addOptionBtn && removeOptionBtn && optionsGrid && correctMCQ) {
+        addOptionBtn.addEventListener('click', function() {
+            if (currentOptionIndex < letters.length) {
+                const letter = letters[currentOptionIndex];
+                
+                // Create new option div
+                const newOption = document.createElement('div');
+                newOption.innerHTML = `
+                    <label class="form-label">Option ${letter}:</label>
+                    <input type="text" id="option${letter}" class="form-control">
+                `;
+                optionsGrid.appendChild(newOption);
+
+                // Add focus event for LaTeX insertion
+                const optionInput = newOption.querySelector(`#option${letter}`);
+                if (optionInput) {
+                    optionInput.addEventListener('focus', function() {
+                        currentFocusedElement = this;
+                    });
+                }
+                
+                // Add option to correct answer dropdown
+                const newOptionElement = document.createElement('option');
+                newOptionElement.value = letter;
+                newOptionElement.textContent = letter;
+                correctMCQ.appendChild(newOptionElement);
+                
+                currentOptionIndex++;
+                
+                // Enable remove button when we have more than 4 options
+                removeOptionBtn.disabled = false;
+                
+                // Disable add button if we've reached the maximum
+                if (currentOptionIndex >= letters.length) {
+                    addOptionBtn.disabled = true;
+                }
+            }
+        });
+        
+        removeOptionBtn.addEventListener('click', function() {
+            if (currentOptionIndex > 0) {
+                const letter = letters[currentOptionIndex - 1];
+                
+                // Remove the last option div
+                const lastOption = optionsGrid.lastElementChild;
+                if (lastOption) {
+                    optionsGrid.removeChild(lastOption);
+                }
+                
+                // Remove option from correct answer dropdown
+                const optionToRemove = correctMCQ.querySelector(`option[value="${letter}"]`);
+                if (optionToRemove) {
+                    correctMCQ.removeChild(optionToRemove);
+                }
+                
+                currentOptionIndex--;
+                
+                // Disable remove button if we're back to 4 options
+                if (currentOptionIndex === 0) {
+                    removeOptionBtn.disabled = true;
+                }
+                
+                // Enable add button since we've removed an option
+                addOptionBtn.disabled = false;
+            }
+        });
+    }
+});

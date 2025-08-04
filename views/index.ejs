@@ -232,6 +232,10 @@
                             <!-- MCQ Options -->
                             <div id="mcqOptions" class="form-group hidden">
                                 <label class="form-label">Answer Options</label>
+                                <div class="options-control">
+                                    <button type="button" id="addOptionBtn" class="btn btn--secondary">Add Option</button>
+                                    <button type="button" id="removeOptionBtn" class="btn btn--secondary" disabled>Remove Last Option</button>
+                                </div>
                                 <div class="options-grid">
                                     <div>
                                         <label class="form-label">Option A:</label>
@@ -249,10 +253,7 @@
                                         <label class="form-label">Option D:</label>
                                         <input type="text" id="optionD" class="form-control">
                                     </div>
-                                    <div>
-                                        <label class="form-label">Option E:</label>
-                                        <input type="text" id="optionE" class="form-control">
-                                    </div>
+                                    
                                 </div>
                                 <div class="mt-8">
                                     <label class="form-label" for="correctMCQ">Correct Answer</label>

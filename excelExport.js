@@ -45,16 +45,14 @@ function createWorkbook(data) {
     'Scale2': row.Scale2 || ''
   }));
   
-  // Create worksheet using json_to_sheet for better handling of data types
   const scoringWS = XLSX.utils.json_to_sheet(scoringRows, {
     header: scoringHeaders
   });
-
-  // Set column widths
+  // Set column widths for scoring worksheet
   scoringWS['!cols'] = [
-    { wch: 15 },  // CorrectQ column
-    { wch: 15 },  // Scale1 column
-    { wch: 15 }   // Scale2 column
+    { wch: 15 },  
+    { wch: 15 }, 
+    { wch: 15 }   
   ];
 
   
@@ -82,6 +80,12 @@ function createWorkbook(data) {
       'Option_C',
       'Option_D',
       'Option_E',
+      'Option_F',
+      'Option_G',
+      'Option_H',
+      'Option_I',
+      'Option_J',
+      
     ];
     // Section info row is not needed as a single row, so skip it
 
@@ -100,7 +104,13 @@ function createWorkbook(data) {
       q.options ? (q.options.B || (Array.isArray(q.options) ? q.options[1] : '')) : '',
       q.options ? (q.options.C || (Array.isArray(q.options) ? q.options[2] : '')) : '',
       q.options ? (q.options.D || (Array.isArray(q.options) ? q.options[3] : '')) : '',
-      q.options ? (q.options.E || (Array.isArray(q.options) ? q.options[4] : '')) : ''
+      q.options ? (q.options.E || (Array.isArray(q.options) ? q.options[4] : '')) : '',
+      q.options ? (q.options.F || (Array.isArray(q.options) ? q.options[5] : '')) : '',
+      q.options ? (q.options.G || (Array.isArray(q.options) ? q.options[6] : '')) : '',
+      q.options ? (q.options.H || (Array.isArray(q.options) ? q.options[7] : '')) : '',
+      q.options ? (q.options.I || (Array.isArray(q.options) ? q.options[8] : '')) : '',
+      q.options ? (q.options.J || (Array.isArray(q.options) ? q.options[9] : '')) : '',
+
     ]);
 
     const sheetData = [sectionInfoHeader, ...questionRows];
