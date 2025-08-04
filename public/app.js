@@ -957,10 +957,14 @@ window.editQuestion = function(questionId) {
     document.getElementById('includeAnswerImages').checked = question.additionalOptions.includeAnswerImages;
 
     if (question.type === 'MCQ') {
-        document.getElementById('optionA').value = question.options.A;
-        document.getElementById('optionB').value = question.options.B;
-        document.getElementById('optionC').value = question.options.C;
-        document.getElementById('optionD').value = question.options.D;
+        // Populate all available options (A-J)
+        const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+        letters.forEach(letter => {
+            const optionElement = document.getElementById(`option${letter}`);
+            if (optionElement && question.options[letter]) {
+                optionElement.value = question.options[letter];
+            }
+        });
         document.getElementById('correctMCQ').value = question.correctAnswer;
     } else if (question.type === 'Grid-in') {
         document.getElementById('correctGridin').value = question.correctAnswer;
@@ -1054,16 +1058,23 @@ function handleQuestionSubmit(e) {
         };
 
         if (questionType === 'MCQ') {
-            baseData.options = {
-                A: document.getElementById('optionA').value.trim(),
-                B: document.getElementById('optionB').value.trim(),
-                C: document.getElementById('optionC').value.trim(),
-                D: document.getElementById('optionD').value.trim(),
-            };
+            baseData.options = {};
+            const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+            
+            // Capture all available options
+            letters.forEach(letter => {
+                const optionElement = document.getElementById(`option${letter}`);
+                if (optionElement && optionElement.value.trim()) {
+                    baseData.options[letter] = optionElement.value.trim();
+                }
+            });
+            
             baseData.correctAnswer = document.getElementById('correctMCQ').value;
             
-            if (!baseData.options.A || !baseData.options.B || !baseData.options.C || !baseData.options.D || !baseData.correctAnswer) {
-                alert('Please fill in all options and select the correct answer for MCQ.');
+            // Check if we have at least 4 options and a correct answer
+            const optionCount = Object.keys(baseData.options).length;
+            if (optionCount < 4 || !baseData.correctAnswer) {
+                alert('Please fill in at least 4 options and select the correct answer for MCQ.');
                 return;
             }
         } else if (questionType === 'Grid-in') {
