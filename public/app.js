@@ -1,7 +1,7 @@
 // Session handling functions
 function saveToSession() {
     try {
-        sessionStorage.setItem('appData', JSON.stringify(appData));
+        localStorage.setItem('appData', JSON.stringify(appData));
         
     } catch (error) {
         console.error('Error saving to session:', error);
@@ -10,7 +10,7 @@ function saveToSession() {
 
 function loadFromSession() {
     try {
-        const savedData = sessionStorage.getItem('appData');
+        const savedData = localStorage.getItem('appData');
         if (savedData) {
             appData = JSON.parse(savedData);
            
@@ -25,7 +25,7 @@ function loadFromSession() {
 
 function clearSession() {
     try {
-        sessionStorage.removeItem('appData');
+        localStorage.removeItem('appData');
         
     } catch (error) {
         console.error('Error clearing session:', error);
