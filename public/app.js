@@ -13,7 +13,10 @@ function loadFromSession() {
         const savedData = localStorage.getItem('appData');
         if (savedData) {
             appData = JSON.parse(savedData);
-           
+            
+            // Migrate existing data to include orderInSection
+            migrateQuestionOrdering();
+            
             return true;
         }
         return false;
@@ -21,6 +24,32 @@ function loadFromSession() {
         console.error('Error loading from session:', error);
         return false;
     }
+}
+
+// Function to migrate existing questions to include orderInSection
+function migrateQuestionOrdering() {
+    if (!appData.questions || appData.questions.length === 0) return;
+    
+    // Group questions by section
+    const questionsBySection = {};
+    appData.questions.forEach(question => {
+        if (!questionsBySection[question.sectionId]) {
+            questionsBySection[question.sectionId] = [];
+        }
+        questionsBySection[question.sectionId].push(question);
+    });
+    
+    // Assign orderInSection to each question in each section
+    Object.keys(questionsBySection).forEach(sectionId => {
+        const sectionQuestions = questionsBySection[sectionId];
+        sectionQuestions.forEach((question, index) => {
+            if (!question.hasOwnProperty('orderInSection')) {
+                question.orderInSection = index + 1;
+            }
+        });
+    });
+    
+    console.log('Question ordering migration completed');
 }
 
 function clearSession() {
@@ -164,15 +193,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function exportToExcel() {
-               fetch('/export', {
+        // Validate and fix data integrity before export
+        validateAndFixDataIntegrity();
+        
+        // Sort questions by section and order before export to prevent jumbling
+        const sortedQuestions = [...appData.questions].sort((a, b) => {
+            if (a.sectionId !== b.sectionId) {
+                return a.sectionId.localeCompare(b.sectionId);
+            }
+            return (a.orderInSection || 0) - (b.orderInSection || 0);
+        });
+        
+        fetch('/export', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 sections: appData.sections,
-                questions: appData.questions,
-                scoringData: appData.scoringData // Add scoring data to the request
+                questions: sortedQuestions, // Use sorted questions
+                scoringData: appData.scoringData
             })
         })
         .then(response => {
@@ -658,8 +698,12 @@ window.deleteSection = function(sectionId) {
     console.log('Deleting section:', sectionId);
     if (confirm('Are you sure you want to delete this section? This will also delete all questions in this section.')) {
         try {
+            // Remove the section
             appData.sections = appData.sections.filter(s => s.id !== sectionId);
+            
+            // Remove all questions in this section
             appData.questions = appData.questions.filter(q => q.sectionId !== sectionId);
+            
             renderSections();
             renderQuestions();
             populateSectionDropdown();
@@ -680,42 +724,68 @@ function handleQuestionSubmit(e) {
     try {
         const questionType = document.getElementById('questionType').value;
         const sectionId = document.getElementById('questionSection').value;
+        const editingId = e.target.dataset.editingId;
         
         if (!questionType || !sectionId) {
             alert('Please select question type and section.');
             return;
         }
-        
-        // Get the count of existing questions in this section
-        const sectionQuestions = appData.questions.filter(q => q.sectionId === sectionId);
-        const questionNumber = sectionQuestions.length + 1;
+
+        // Check if section is being changed during edit
+        let oldSectionId = null;
+        if (editingId) {
+            const existingQuestion = appData.questions.find(q => q.id === editingId);
+            if (existingQuestion && existingQuestion.sectionId !== sectionId) {
+                oldSectionId = existingQuestion.sectionId;
+            }
+        }
+
+        // Use stable ID generation - don't rely on array position
+        let questionId;
+        if (editingId) {
+            questionId = editingId;
+        } else {
+            // Generate a unique ID based on timestamp and section
+            const timestamp = Date.now();
+            questionId = `Q${sectionId}_${timestamp}`;
+        }
         
         const baseData = {
-            id: `Q${questionNumber}`,
+            id: questionId,
             type: questionType,
             sectionId: sectionId,
             questionText: document.getElementById('questionText').value.trim(),
             concepts: document.getElementById('concepts').value.trim(),
             learningStrategies: document.getElementById('learningStrategies').value.trim(),
+            // Add order tracking
+            orderInSection: editingId ? 
+                (appData.questions.find(q => q.id === editingId)?.orderInSection || 0) :
+                (appData.questions.filter(q => q.sectionId === sectionId).length + 1),
             additionalOptions: {
                 includeReadingPassage: document.getElementById('includeReadingPassage').checked,
                 includeQuestionImage: document.getElementById('includeQuestionImage').checked,
                 includeAnswerImages: document.getElementById('includeAnswerImages').checked
             }
         };
-        
+
         if (questionType === 'MCQ') {
-            baseData.options = {
-                A: document.getElementById('optionA').value.trim(),
-                B: document.getElementById('optionB').value.trim(),
-                C: document.getElementById('optionC').value.trim(),
-                D: document.getElementById('optionD').value.trim(),
-            };
+            baseData.options = {};
+            const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+            
+            // Capture all available options with proper ordering
+            letters.forEach(letter => {
+                const optionElement = document.getElementById(`option${letter}`);
+                if (optionElement && optionElement.value.trim()) {
+                    baseData.options[letter] = optionElement.value.trim();
+                }
+            });
+            
             baseData.correctAnswer = document.getElementById('correctMCQ').value;
             
-            
-            if (!baseData.options.A || !baseData.options.B || !baseData.options.C || !baseData.options.D || !baseData.correctAnswer) {
-                alert('Please fill in all options and select the correct answer for MCQ.');
+            // Check if we have at least 4 options and a correct answer
+            const optionCount = Object.keys(baseData.options).length;
+            if (optionCount < 4 || !baseData.correctAnswer) {
+                alert('Please fill in at least 4 options and select the correct answer for MCQ.');
                 return;
             }
         } else if (questionType === 'Grid-in') {
@@ -731,16 +801,34 @@ function handleQuestionSubmit(e) {
             alert('Please enter the question text.');
             return;
         }
-        
-        appData.questions.push(baseData);
-        console.log('Question added successfully. Total questions:', appData.questions.length);
+
+        if (editingId) {
+            const index = appData.questions.findIndex(q => q.id === editingId);
+            if (index >= 0) {
+                appData.questions[index] = baseData;
+                console.log('Question updated successfully');
+                
+                // Handle section change if needed
+                if (oldSectionId) {
+                    handleQuestionSectionChange(oldSectionId, sectionId, questionId);
+                }
+            }
+        } else {
+            appData.questions.push(baseData);
+            console.log('Question added successfully');
+        }
+
+        e.target.dataset.editingId = '';
+        e.target.reset();
+        resetQuestionForm();
         
         renderQuestions();
+        saveToSession();
         closeModal('questionModal');
         
     } catch (error) {
         console.error('Error submitting question:', error);
-        alert('Error adding question. Please try again.');
+        alert('Error saving question. Please try again.');
     }
 }
 
@@ -872,16 +960,38 @@ window.deleteQuestion = function(questionId) {
     console.log('Deleting question:', questionId);
     if (confirm('Are you sure you want to delete this question?')) {
         try {
-            appData.questions = appData.questions.filter(q => q.id !== questionId);
-            renderQuestions();
-            saveToSession();
-            console.log('Question deleted successfully');
+            const questionToDelete = appData.questions.find(q => q.id === questionId);
+            if (questionToDelete) {
+                const sectionId = questionToDelete.sectionId;
+                
+                // Remove the question
+                appData.questions = appData.questions.filter(q => q.id !== questionId);
+                
+                // Reorder remaining questions in the same section
+                reorderQuestionsInSection(sectionId);
+                
+                renderQuestions();
+                saveToSession();
+                console.log('Question deleted successfully');
+            }
         } catch (error) {
             console.error('Error deleting question:', error);
             alert('Error deleting question. Please try again.');
         }
     }
 };
+
+// Function to reorder questions within a section after deletion
+function reorderQuestionsInSection(sectionId) {
+    const sectionQuestions = appData.questions.filter(q => q.sectionId === sectionId);
+    
+    // Sort by current orderInSection and reassign sequential numbers
+    sectionQuestions
+        .sort((a, b) => (a.orderInSection || 0) - (b.orderInSection || 0))
+        .forEach((question, index) => {
+            question.orderInSection = index + 1;
+        });
+}
 
 window.resetAllData = function() {
     if (confirm('Are you sure you want to reset all data? This will clear all sections and questions.')) {
@@ -939,11 +1049,14 @@ window.editQuestion = function(questionId) {
     const question = appData.questions.find(q => q.id === questionId);
     if (!question) return;
 
-   
+    // Store the original section ID for comparison
+    const originalSectionId = question.sectionId;
+
+    // Populate form fields
     document.getElementById('questionSection').value = question.sectionId;
     document.getElementById('questionType').value = question.type;
     
-   
+    // Handle question type change
     handleQuestionTypeChange();
 
     document.getElementById('questionText').value = question.questionText;
@@ -972,6 +1085,25 @@ window.editQuestion = function(questionId) {
     
     openModal('questionModal');
 };
+
+// Function to handle question reordering when moving between sections
+function handleQuestionSectionChange(oldSectionId, newSectionId, questionId) {
+    if (oldSectionId === newSectionId) return;
+    
+    // Reorder questions in the old section
+    if (oldSectionId) {
+        reorderQuestionsInSection(oldSectionId);
+    }
+    
+    // Add question to new section with proper ordering
+    if (newSectionId) {
+        const question = appData.questions.find(q => q.id === questionId);
+        if (question) {
+            const newSectionQuestions = appData.questions.filter(q => q.sectionId === newSectionId);
+            question.orderInSection = newSectionQuestions.length + 1;
+        }
+    }
+}
 
 function handleSectionSubmit(e) {
     e.preventDefault();
@@ -1038,16 +1170,36 @@ function handleQuestionSubmit(e) {
             return;
         }
 
-        const sectionQuestions = appData.questions.filter(q => q.sectionId === sectionId);
-        const questionNumber = editingId ? editingId.split('Q')[1] : (sectionQuestions.length + 1);
+        // Check if section is being changed during edit
+        let oldSectionId = null;
+        if (editingId) {
+            const existingQuestion = appData.questions.find(q => q.id === editingId);
+            if (existingQuestion && existingQuestion.sectionId !== sectionId) {
+                oldSectionId = existingQuestion.sectionId;
+            }
+        }
+
+        // Use stable ID generation - don't rely on array position
+        let questionId;
+        if (editingId) {
+            questionId = editingId;
+        } else {
+            // Generate a unique ID based on timestamp and section
+            const timestamp = Date.now();
+            questionId = `Q${sectionId}_${timestamp}`;
+        }
         
         const baseData = {
-            id: editingId || `Q${questionNumber}`,
+            id: questionId,
             type: questionType,
             sectionId: sectionId,
             questionText: document.getElementById('questionText').value.trim(),
             concepts: document.getElementById('concepts').value.trim(),
             learningStrategies: document.getElementById('learningStrategies').value.trim(),
+            // Add order tracking
+            orderInSection: editingId ? 
+                (appData.questions.find(q => q.id === editingId)?.orderInSection || 0) :
+                (appData.questions.filter(q => q.sectionId === sectionId).length + 1),
             additionalOptions: {
                 includeReadingPassage: document.getElementById('includeReadingPassage').checked,
                 includeQuestionImage: document.getElementById('includeQuestionImage').checked,
@@ -1059,7 +1211,7 @@ function handleQuestionSubmit(e) {
             baseData.options = {};
             const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
             
-            // Capture all available options
+            // Capture all available options with proper ordering
             letters.forEach(letter => {
                 const optionElement = document.getElementById(`option${letter}`);
                 if (optionElement && optionElement.value.trim()) {
@@ -1094,6 +1246,11 @@ function handleQuestionSubmit(e) {
             if (index >= 0) {
                 appData.questions[index] = baseData;
                 console.log('Question updated successfully');
+                
+                // Handle section change if needed
+                if (oldSectionId) {
+                    handleQuestionSectionChange(oldSectionId, sectionId, questionId);
+                }
             }
         } else {
             appData.questions.push(baseData);
@@ -1211,3 +1368,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Function to validate and fix data integrity before export
+function validateAndFixDataIntegrity() {
+    console.log('Validating data integrity before export...');
+    
+    // Ensure all questions have orderInSection
+    appData.questions.forEach(question => {
+        if (!question.hasOwnProperty('orderInSection')) {
+            question.orderInSection = 1; // Default fallback
+        }
+    });
+    
+    // Fix any duplicate orderInSection values within sections
+    const questionsBySection = {};
+    appData.questions.forEach(question => {
+        if (!questionsBySection[question.sectionId]) {
+            questionsBySection[question.sectionId] = [];
+        }
+        questionsBySection[question.sectionId].push(question);
+    });
+    
+    Object.keys(questionsBySection).forEach(sectionId => {
+        const sectionQuestions = questionsBySection[sectionId];
+        const usedOrders = new Set();
+        
+        sectionQuestions.forEach(question => {
+            let order = question.orderInSection || 1;
+            while (usedOrders.has(order)) {
+                order++;
+            }
+            question.orderInSection = order;
+            usedOrders.add(order);
+        });
+    });
+    
+    console.log('Data integrity validation completed');
+}
